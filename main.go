@@ -5,8 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
@@ -17,13 +17,13 @@ func main() {
 	var err error
 	var showHeaders bool
 
-	flag.StringVar(&host, "h", "", "TLS servername to use in preference to URL host")
-	flag.BoolVar(&showHeaders, "i", false, "show request/response headers")
+	flag.StringVar(&host, "h", "", "website hostname to use in preference to URL hostname")
+	flag.BoolVar(&showHeaders, "i", false, "show response headers")
 	flag.Parse()
 
 	url := flag.Arg(0)
 	if url == "" {
-		fmt.Println("You must supply a URL")
+		fmt.Fprintln(os.Stderr, "You must supply a URL")
 		return
 	}
 
@@ -45,21 +45,23 @@ func main() {
 	}
 	resp, err = client.Do(req)
 	if err != nil {
-		log.Printf("http(s) error, %s", err)
+		fmt.Fprintf(os.Stderr, "http(s) error, %s", err)
 	} else {
 		if showHeaders {
 			// Go doesn't populate request header for client
 			//fmt.Printf("\nRequest:\n\n%s", req.Header)
 			header := ""
 			for key, _ := range resp.Header {
-				header += key + ": " + resp.Header.Get(key) + "\n"
+				header += fmt.Sprintf("%20s: %s\n", key, resp.Header.Get(key))
 			}
-			fmt.Printf("Response Header:\n------------------\n%s\n", header)
+			fmt.Fprintf(os.Stderr, "%20s\n", "Response Headers")
+			fmt.Fprintf(os.Stderr, "%20s\n", "-----------------")
+			fmt.Fprintf(os.Stderr, "%s\n", header)
 		}
 		var body []byte
 		body, err = ioutil.ReadAll(resp.Body)
 		if err != nil {
-			log.Printf("http(s) error, %s", err)
+			fmt.Fprintf(os.Stderr, "http(s) error, %s", err)
 		} else {
 			fmt.Printf("%s", body)
 		}
